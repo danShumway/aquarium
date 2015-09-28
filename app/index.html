@@ -1,0 +1,12 @@
+<div class="main">
+    <canvas class="canvas" width="1024" height="786"></canvas>
+</div>
+
+<script>
+    var Aquarium = require(__dirname + "/aquarium");
+    var constants = require(__dirname + "/constants");
+    var aquarium = new Aquarium(constants);
+
+    aquarium.addTarget(document.querySelector('.canvas'));
+    aquarium.start();
+</script>
