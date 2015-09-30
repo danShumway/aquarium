@@ -1,19 +1,55 @@
 "use strict";
+var constants = require(__dirname + "/constants"); //TODO: remove this (dependency: Fish)
 
 function Fish(x, y, rotation) { var that=this; that.init(x, y, rotation); }
 Fish.prototype = {
     constructor: Fish,
 
+    params : constants.fish,
     init: function(x, y, rotation) {
-        var that = this;
+        var that=this;
         that.x = x || 0;
         that.y = y || 0;
         that.rotation = rotation || 0;
+        that.ticks = 0;
+        that.pickTarget();
+
+        // document.addEventListener('mousemove', function (e) {
+        //     that.targetX = e.pageX;
+        //     that.targetY = e.pageY;
+        // });
+    },
+    pickTarget : function() {
+        var that=this;
+        that.targetX = Math.random()*constants.screenWidth;
+        that.targetY = Math.random()*constants.screenHeight;
+    },
+    rotate : function(x, y) {
+        var that=this;
+
+        var targetRotation = that.targetRotation = Math.atan2(y - that.y, x - that.x);
+        if(that.rotation < targetRotation) {
+            that.rotation = (that.rotation + 0.05);
+        } else {
+            that.rotation = (that.rotation - 0.05);
+        }
     },
     update: function() {
-        var that = this;
-        that.x += Math.cos(that.rotation)*2;
-        that.y += Math.sin(that.rotation)*2;
+        var that=this;
+
+        that.ticks++; //Increment our internal clock.
+
+        //AI - some abstraction to come later.
+        if(that.ticks >= 200) {
+            that.ticks -= 200;
+            that.pickTarget();
+        }
+
+        that.rotate(that.targetX, that.targetY);
+
+        //Motion: Should be handled by World.
+        that.x += Math.cos(that.rotation)*that.params.minSpeed;
+        that.y += Math.sin(that.rotation)*that.params.minSpeed;
     }
 }
 
@@ -26,14 +62,14 @@ World.prototype = {
 
         that.fish = [];
         for(let i=options.numberOfFish-1;i>=0;i--) {
-            let positionX = Math.random()*options.screenWidth;
-            let positionY = Math.random()*options.screenHeight;
+            let positionX = Math.random()*700;//options.screenWidth;
+            let positionY = Math.random()*700;//options.screenHeight;
             let rotation = Math.random()*2*Math.PI;
             that.fish.push(new Fish(positionX, positionY, rotation));
         }
     },
     update: function() {
-        var that = this;
+        var that=this;
         for(let i=that.fish.length-1;i>=0;i--) {
             let fish = that.fish[i];
             fish.update();
@@ -79,6 +115,8 @@ Display.prototype = {
             path.lineTo(-20, 10);
             that.context.stroke(path);
             that.context.restore();
+
+            that.context.fillRect(fish.targetX, fish.targetY, 5, 5);
         }
     }
 };
@@ -107,7 +145,7 @@ Aquarium.prototype = {
         for(let i=that.displays.length-1;i>=0;i--) {
             that.displays[i].render(that.world);
         }
-        window.setTimeout(that.step, 1000/30);
+        window.setTimeout(that.step, 1000/60); //There's no reason to use requestAnimationFrame here.
     },
 
     addTarget: function(target) {
